@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,16 +13,20 @@ generator client {
 // --------------------------------------
 
 model User {
-  id             Int      @id @default(autoincrement())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  name           String?
-  email          String   @unique
+  id             Int        @id @default(autoincrement())
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  firstName      String?
+  lastName       String?
+  address        String?
+  phone          String?
+  email          String     @unique
   hashedPassword String?
-  role           String   @default("USER")
-
-  tokens   Token[]
-  sessions Session[]
+  role           String     @default("USER")
+  tokens         Token[]
+  sessions       Session[]
+  Customer       Customer[]
+  Supplier       Supplier[]
 }
 
 model Session {
@@ -41,18 +45,15 @@ model Session {
 }
 
 model Token {
-  id          Int      @id @default(autoincrement())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id          Int       @id @default(autoincrement())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   hashedToken String
-  type        String
-  // See note below about TokenType enum
-  // type        TokenType
+  type        TokenType
   expiresAt   DateTime
   sentTo      String
-
-  user   User @relation(fields: [userId], references: [id])
-  userId Int
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
 
   @@unique([hashedToken, type])
 }
@@ -60,6 +61,125 @@ model Token {
 // NOTE: It's highly recommended to use an enum for the token type
 //       but enums only work in Postgres.
 //       See: https://blitzjs.com/docs/database-overview#switch-to-postgresql
-// enum TokenType {
-//   RESET_PASSWORD
-// }
+enum TokenType {
+  RESET_PASSWORD
+}
+
+model Supplier {
+  id           Int         @id @default(autoincrement())
+  userId       Int
+  user         User        @relation(fields: [userId], references: [id])
+  otherDetails String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  products     Product[]
+  inventory    Inventory[]
+  brands       Brand[]
+}
+
+model Product {
+  id                Int           @id @default(autoincrement())
+  supplierId        Int
+  categoryId        Int
+  name              String
+  description       String
+  unit              Int
+  price             Float
+  quantity          Int
+  lowStockThreshold Int
+  status            String
+  otherDetails      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  brand             Brand         @relation(fields: [brandId], references: [id])
+  supplier          Supplier      @relation(fields: [supplierId], references: [id])
+  category          Category      @relation(fields: [categoryId], references: [id])
+  orderDetails      OrderDetail[]
+  inventory         Inventory[]
+  brandId           Int
+}
+
+model OrderDetail {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  orderId   Int
+  unitPrice Float
+  quantity  Int
+  discount  Float
+  total     Float
+  date      DateTime
+  product   Product  @relation(fields: [productId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Order {
+  id           Int           @id @default(autoincrement())
+  customerId   Int
+  orderHash    String
+  orderDate    DateTime
+  otherDetails String?
+  customer     Customer      @relation(fields: [customerId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orderDetails OrderDetail[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+model Payment {
+  id           Int      @id @default(autoincrement())
+  billNumber   Int
+  paymentType  String
+  otherDetails String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+enum Role {
+  CUSTOMER
+  GUEST
+  ADMIN
+  SUPPLIER
+  PHARMASIST
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orders    Order[]
+}
+
+model Brand {
+  id          Int       @id @default(autoincrement())
+  supplierId  Int
+  name        String
+  fullName    String?
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  suplier     Supplier  @relation(fields: [supplierId], references: [id])
+  products    Product[]
+}
+
+model Inventory {
+  id         Int      @id @default(autoincrement())
+  supplierId Int
+  productId  Int
+  quantity   Int
+  product    Product  @relation(fields: [productId], references: [id])
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

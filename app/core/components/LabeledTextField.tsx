@@ -1,3 +1,5 @@
+import { FormControl, FormErrorMessage, FormLabel } from "@chakra-ui/form-control"
+import { Input } from "@chakra-ui/input"
 import { forwardRef, PropsWithoutRef, ComponentPropsWithoutRef } from "react"
 import { useFormContext } from "react-hook-form"
 
@@ -13,7 +15,7 @@ export interface LabeledTextFieldProps extends PropsWithoutRef<JSX.IntrinsicElem
 }
 
 export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldProps>(
-  ({ label, outerProps, labelProps, name, ...props }, ref) => {
+  ({ label, outerProps, labelProps, name, type, ...props }, ref) => {
     const {
       register,
       formState: { isSubmitting, errors },
@@ -23,35 +25,15 @@ export const LabeledTextField = forwardRef<HTMLInputElement, LabeledTextFieldPro
       : errors[name]?.message || errors[name]
 
     return (
-      <div {...outerProps}>
-        <label {...labelProps}>
+      <FormControl {...outerProps}>
+        <FormLabel {...labelProps}>
           {label}
-          <input disabled={isSubmitting} {...register(name)} {...props} />
-        </label>
 
-        {error && (
-          <div role="alert" style={{ color: "red" }}>
-            {error}
-          </div>
-        )}
+          <Input disabled={isSubmitting} {...register(name)} type={type} />
+        </FormLabel>
 
-        <style jsx>{`
-          label {
-            display: flex;
-            flex-direction: column;
-            align-items: start;
-            font-size: 1rem;
-          }
-          input {
-            font-size: 1rem;
-            padding: 0.25rem 0.5rem;
-            border-radius: 3px;
-            border: 1px solid purple;
-            appearance: none;
-            margin-top: 0.5rem;
-          }
-        `}</style>
-      </div>
+        {error && <FormErrorMessage>{error}</FormErrorMessage>}
+      </FormControl>
     )
   }
 )
