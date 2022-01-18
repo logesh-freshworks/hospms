@@ -36,6 +36,8 @@ export function Form<S extends z.ZodType<any, any>>({
   })
   const [formError, setFormError] = useState<string | null>(null)
 
+  console.log(formError)
+
   return (
     <FormProvider {...ctx}>
       <form
